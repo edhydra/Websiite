@@ -1,31 +1,36 @@
 # edwardlongiscool.com — PRD
 
 ## Original Problem Statement
-Personality-driven "cool stuff" site (brutalist + Y2K). Full spec includes sections (landing, about, projects, photos, wall of fame, guestbook), auth (Google + email/password), games (5), Edward-bot AI, easter eggs, audio. Built incrementally.
-
-## User's Explicit Request (this session)
-"Add the Claude AI Models integration to my app." → Edward-bot AI implemented first.
+Personality-driven "cool stuff" site (hybrid brutalist + Y2K). Tabs: Home, Games, Useful Stuff, Wall of Fame, Guestbook. Games (Snake, Flappy, Pong, Whack-a-Mole, Minesweeper, Clicker, Paint, Roulette). Coin economy + cosmetic shop (site themes + game skins). Auth (JWT). Command bar easter eggs. Accessibility menu. NO car/garage UI content anywhere.
 
 ## Architecture
-- Frontend: React 19 + Tailwind + Framer Motion, Space Mono / VT323 fonts. Y2K/brutalist theme.
-- Backend: FastAPI, `/api` prefix, SSE streaming.
-- DB: MongoDB (`ai_chats` collection for chat history).
-- AI: Claude Sonnet 5 (primary) → GPT 5.4 Mini (fallback) via emergentintegrations + EMERGENT_LLM_KEY. No key exposed to client.
+- Frontend: React 19, tab-based layout, Y2K/brutalist theme, dynamic CSS-variable theming via `ThemeSync.jsx`.
+- Backend: FastAPI, `/api` prefix. MongoDB via motor.
+- Auth: Custom JWT (cookies), integration playbook-based.
 
-## Implemented (2026-09-13)
-- Edward-bot AI: server-side streaming proxy `/api/ai/chat`, history `/api/ai/history/{sid}` (GET/DELETE).
-- Personality system prompt: Edward = cool/tall/epic; loves Land Rover/Ford, dislikes EVs (worked in naturally); otherwise fully helpful assistant.
-- Frontend floating chat widget (bottom-right FAB) with Y2K chrome styling, streaming render, markdown (react-markdown + remark-gfm), copy button, clear chat.
-- Per-IP anon rate limit (20/hour).
-- Session persistence via localStorage session id + Mongo history.
-- Themed landing hero (placeholder copy — to be replaced with verbatim original text later).
+## Implemented (2026-02)
+- Tab layout (Home, Games, Useful, Wall of Fame, Guestbook)
+- 8 playable games with leaderboards
+- Useful tab: Word Counter, Calculator, Periodic Table, Revision Links, Flashcards (saved to account)
+- Coin economy + shop (site themes + game skins, buy/equip)
+- Command Bar cheat codes: Metchog (1000), Edward (100), ADMIN11 (90000), Piastri (papaya theme unlock), YAY! (confetti)
+- Accessibility menu (top-right)
+- Guestbook, Wall of Fame (seeded OG names), visitor counter
 
-## Backlog (P0/P1)
-- P0: Port real sections with verbatim original copy (crawl edwardlongiscool.com) — About, Projects, Photos, Wall of Fame, Guestbook.
-- P0: Auth (Emergent Google + email/password JWT) → tie AI history/leaderboards to accounts, higher rate limits.
-- P1: 5 games with Mongo leaderboards.
-- P1: Easter eggs (command bar, konami), visitor counter, audio layer.
-- P2: Admin delete panel, email verification.
+## Removed (2026-02)
+- **Edward-bot AI chatbot**: fully removed at user request to eliminate Universal Key credit usage.
+  - Deleted `frontend/src/components/EdwardBot.jsx`
+  - Removed FAB / chat window / API calls
+  - Removed backend routes `/api/ai/chat`, `/api/ai/history/{sid}` (GET & DELETE)
+  - Removed `EDWARD_SYSTEM_PROMPT`, `MODEL_CHAIN`, AI rate-limiter, `emergentintegrations` import from `server.py`
+  - Cleaned copy: hero chip → "WELCOME", marquee/about no longer mention AI, command bar `credits` output updated
+  - `EMERGENT_LLM_KEY` env var kept in place (unused) — safe to leave
+
+## Backlog
+- P2: Audio layer — background chiptune loop (off by default, top-right toggle) + hover/click SFX
+- P2: Admin delete panel for guestbook/wall
+- P3: Additional cosmetic themes / skins as content updates
 
 ## Notes
-- Existing site copy/assets NOT yet imported (user hasn't provided source). Landing uses placeholder text.
+- Design rule: NEVER add car/garage UI content.
+- Themes controlled via CSS variables in `/app/frontend/src/lib/themes.js` and injected by `ThemeSync.jsx` — don't hardcode colors in `App.css`.

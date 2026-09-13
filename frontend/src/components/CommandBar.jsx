@@ -87,7 +87,7 @@ export default function CommandBar({ sfx }) {
       case "party": document.body.classList.toggle("eb-party"); push("PARTY MODE toggled 🎉"); break;
       case "secret": push("✦ secret: snake gets faster the longer you survive. eat fast for combo x5."); break;
       case "sudo hire edward": push(["ACCESS GRANTED.","edward has been HIRED.","salary: unlimited snake high scores"]); sfx.good(); break;
-      case "credits": push(["edwardlongiscool.com","built by edward (tall, cool, epic)","powered by edward-bot + chiptunes"]); break;
+      case "credits": push(["edwardlongiscool.com","built by edward (tall, cool, epic)","powered by chiptunes and pure confidence"]); break;
       case "clear": setOut([]); break;
       default: push(`command not found: ${cmd} (try 'help')`);
     }

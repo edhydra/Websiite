@@ -3,15 +3,15 @@ import { Sparkles, Gamepad2, Trophy, BookOpen, Mail, GraduationCap } from "lucid
 export const Hero = ({ onTab }) => (
   <section className="eb-hero" data-testid="section-hero">
     <div className="eb-hero-inner">
-      <div className="eb-chip"><Sparkles size={14} /> EDWARD-BOT IS ONLINE</div>
+      <div className="eb-chip"><Sparkles size={14} /> WELCOME</div>
       <h1 className="eb-h1">
         EDWARD<br />
         <span className="eb-h1-accent">LONG</span><br />
         IS COOL
       </h1>
       <p className="eb-sub">
-        a personal playground of jokes, games and cool stuff, with an in-house AI.
-        tap the bot in the corner and start chatting.
+        a personal playground of jokes, games and cool stuff. play the games,
+        earn coins, sign the guestbook, and poke around.
       </p>
       <div className="eb-hero-cta">
         <button className="eb-btn" onClick={() => onTab("games")} data-testid="hero-play"><Gamepad2 size={14} /> PLAY SNAKE</button>
@@ -29,8 +29,8 @@ export const About = ({ onTab }) => (
       <div className="eb-panel">
         <p>yo. this is edward's corner of the internet. it's loud, it's a bit chaotic, and it runs on
         chiptunes and pure confidence.</p>
-        <p>expect: cool stuff, dumb jokes, actual playable games, a wall of certified cool people, and
-        an AI that thinks edward is genuinely epic (because he is — tall too).</p>
+        <p>expect: cool stuff, dumb jokes, actual playable games, a wall of certified cool people,
+        and a guestbook you can leave your mark on.</p>
         <ul className="eb-list">
           <li><Gamepad2 size={14} /> games with real leaderboards</li>
           <li><Trophy size={14} /> the wall of fame — get your name on it</li>

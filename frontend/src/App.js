@@ -10,7 +10,6 @@ import WallOfFame from "@/components/WallOfFame";
 import Guestbook from "@/components/Guestbook";
 import Footer from "@/components/Footer";
 import CommandBar from "@/components/CommandBar";
-import EdwardBot from "@/components/EdwardBot";
 import AuthModal from "@/components/AuthModal";
 import ThemeSync from "@/components/ThemeSync";
 import { AuthProvider } from "@/context/AuthContext";
@@ -57,7 +56,7 @@ const Home = () => {
       <ThemeSync />
       <div className="eb-grid-bg" />
       <div className="eb-marquee-top">
-        <span>★ welcome ★ cool stuff inside ★ ask edward-bot anything ★ play the games, earn coins ★ hit / for secrets ★ </span>
+        <span>★ welcome ★ cool stuff inside ★ play the games, earn coins ★ hit / for secrets ★ </span>
       </div>
       <Navbar
         tabs={TABS}
@@ -79,7 +78,6 @@ const Home = () => {
 
       <Footer />
       <CommandBar sfx={sfx} />
-      <EdwardBot />
       {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
     </div>
   );
