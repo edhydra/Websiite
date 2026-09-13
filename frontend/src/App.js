@@ -1,42 +1,43 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import "@/App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Navbar from "@/components/Navbar";
+import { Hero, About, Garage, RetroTech, Photos } from "@/components/Sections";
+import WallOfFame from "@/components/WallOfFame";
+import Guestbook from "@/components/Guestbook";
+import Footer from "@/components/Footer";
+import CommandBar from "@/components/CommandBar";
 import EdwardBot from "@/components/EdwardBot";
-import { Sparkles } from "lucide-react";
+import { useSound } from "@/hooks/useSound";
 
 const Home = () => {
-  useEffect(() => {
-    document.title = "edwardlongiscool.com";
-  }, []);
+  const [soundOn, setSoundOn] = useState(false);
+  const soundRef = useRef(false);
+  const sfx = useSound(soundRef);
+
+  useEffect(() => { document.title = "edwardlongiscool.com"; }, []);
+  useEffect(() => { soundRef.current = soundOn; }, [soundOn]);
 
   return (
     <div className="eb-landing" data-testid="home">
       <div className="eb-grid-bg" />
-      <header className="eb-topbar">
-        <div className="eb-logo">edwardlongiscool<span className="eb-blink">_</span></div>
-        <div className="eb-marquee">
-          <span>★ welcome ★ cool stuff inside ★ ask edward-bot anything ★ land rovers &gt; electric cars ★ </span>
-        </div>
-      </header>
+      <div className="eb-marquee-top">
+        <span>★ welcome ★ cool stuff inside ★ ask edward-bot anything ★ land rovers &gt; electric cars ★ hit / for secrets ★ </span>
+      </div>
+      <Navbar soundOn={soundOn} onToggleSound={() => { setSoundOn((s) => !s); sfx.click(); }} sfx={sfx} />
 
-      <main className="eb-hero">
-        <div className="eb-hero-inner">
-          <div className="eb-chip"><Sparkles size={14} /> EDWARD-BOT IS ONLINE</div>
-          <h1 className="eb-h1">
-            EDWARD<br />
-            <span className="eb-h1-accent">LONG</span><br />
-            IS COOL
-          </h1>
-          <p className="eb-sub">
-            a personal playground of jokes, cool stuff, games &amp; an in-house AI.
-            tap the bot in the corner and start chatting.
-          </p>
-          <div className="eb-hint">
-            → click the <b>bot button</b> bottom-right to talk to Edward-bot
-          </div>
-        </div>
+      <main>
+        <Hero />
+        <About />
+        <Garage />
+        <RetroTech />
+        <Photos />
+        <WallOfFame sfx={sfx} />
+        <Guestbook sfx={sfx} />
       </main>
 
+      <Footer />
+      <CommandBar sfx={sfx} />
       <EdwardBot />
     </div>
   );

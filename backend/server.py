@@ -238,6 +238,170 @@ async def ai_clear(session_id: str):
 
 
 # ---------------------------------------------------------------------------
+# Guestbook / Wall of Fame / Visitor counter
+# ---------------------------------------------------------------------------
+_BAD_WORDS = [
+    "fuck", "shit", "bitch", "asshole", "cunt", "dick", "bastard",
+    "nigger", "faggot", "slut", "whore", "retard",
+]
+POST_LIMIT = 8          # posts
+POST_WINDOW = 10 * 60   # per 10 min
+
+
+def _clean(text: str) -> str:
+    out = text
+    for w in _BAD_WORDS:
+        pattern = w
+        # simple case-insensitive censor
+        idx = 0
+        low = out.lower()
+        while pattern in low:
+            i = low.index(pattern)
+            out = out[:i] + ("*" * len(pattern)) + out[i + len(pattern):]
+            low = out.lower()
+    return out
+
+
+def _check_post_limit(ip: str) -> bool:
+    now = time.time()
+    key = f"post:{ip}"
+    hits = [t for t in _rate_hits[key] if now - t < POST_WINDOW]
+    _rate_hits[key] = hits
+    if len(hits) >= POST_LIMIT:
+        return False
+    _rate_hits[key].append(now)
+    return True
+
+
+class GuestbookCreate(BaseModel):
+    name: str
+    message: str
+
+
+class GuestbookEntry(BaseModel):
+    id: str
+    name: str
+    message: str
+    timestamp: str
+
+
+class WallCreate(BaseModel):
+    name: str
+    note: str
+
+
+class WallEntry(BaseModel):
+    id: str
+    name: str
+    note: str
+    timestamp: str
+
+
+@api_router.post("/guestbook", response_model=GuestbookEntry)
+async def create_guestbook(input: GuestbookCreate, request: Request):
+    if not _check_post_limit(_client_ip(request)):
+        raise HTTPException(status_code=429, detail="Whoa, slow down! Try again in a few minutes.")
+    name = _clean(input.name.strip())[:40] or "anon"
+    message = _clean(input.message.strip())[:280]
+    if not message:
+        raise HTTPException(status_code=400, detail="Message can't be empty")
+    doc = {
+        "id": str(uuid.uuid4()),
+        "name": name,
+        "message": message,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.guestbook.insert_one(dict(doc))
+    return GuestbookEntry(**doc)
+
+
+@api_router.get("/guestbook", response_model=List[GuestbookEntry])
+async def get_guestbook():
+    docs = await db.guestbook.find({}, {"_id": 0}).sort("timestamp", -1).to_list(100)
+    return [GuestbookEntry(**d) for d in docs]
+
+
+@api_router.post("/wall", response_model=WallEntry)
+async def create_wall(input: WallCreate, request: Request):
+    if not _check_post_limit(_client_ip(request)):
+        raise HTTPException(status_code=429, detail="Whoa, slow down! Try again in a few minutes.")
+    name = _clean(input.name.strip())[:40] or "anon"
+    note = _clean(input.note.strip())[:120]
+    if not note:
+        raise HTTPException(status_code=400, detail="Note can't be empty")
+    doc = {
+        "id": str(uuid.uuid4()),
+        "name": name,
+        "note": note,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.wall.insert_one(dict(doc))
+    return WallEntry(**doc)
+
+
+@api_router.get("/wall", response_model=List[WallEntry])
+async def get_wall():
+    docs = await db.wall.find({}, {"_id": 0}).sort("timestamp", 1).to_list(200)
+    return [WallEntry(**d) for d in docs]
+
+
+@api_router.post("/visits/hit")
+async def visits_hit():
+    doc = await db.counters.find_one_and_update(
+        {"_id": "visits"},
+        {"$inc": {"count": 1}},
+        upsert=True,
+        return_document=True,
+    )
+    return {"count": doc.get("count", 1) if doc else 1}
+
+
+@api_router.get("/visits/count")
+async def visits_count():
+    doc = await db.counters.find_one({"_id": "visits"})
+    return {"count": (doc or {}).get("count", 0)}
+
+
+# ---------------------------------------------------------------------------
+# Game leaderboards
+# ---------------------------------------------------------------------------
+class ScoreCreate(BaseModel):
+    game: str
+    handle: str
+    score: int
+
+
+class ScoreEntry(BaseModel):
+    handle: str
+    score: int
+    timestamp: str
+
+
+@api_router.post("/scores", response_model=ScoreEntry)
+async def create_score(input: ScoreCreate, request: Request):
+    if not _check_post_limit(_client_ip(request)):
+        raise HTTPException(status_code=429, detail="Slow down! Try again shortly.")
+    handle = _clean(input.handle.strip())[:20] or "anon"
+    score = max(0, min(int(input.score), 10_000_000))
+    doc = {
+        "game": input.game.strip().lower()[:30],
+        "handle": handle,
+        "score": score,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.scores.insert_one(dict(doc))
+    return ScoreEntry(handle=handle, score=score, timestamp=doc["timestamp"])
+
+
+@api_router.get("/scores/{game}", response_model=List[ScoreEntry])
+async def get_scores(game: str):
+    docs = await db.scores.find(
+        {"game": game.strip().lower()}, {"_id": 0}
+    ).sort("score", -1).to_list(10)
+    return [ScoreEntry(handle=d["handle"], score=d["score"], timestamp=d["timestamp"]) for d in docs]
+
+
+# ---------------------------------------------------------------------------
 app.include_router(api_router)
 
 app.add_middleware(
@@ -252,6 +416,38 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+
+
+@app.on_event("startup")
+async def seed_wall_of_fame():
+    """Seed the original edwardlongiscool.com Wall of Fame names once."""
+    existing = await db.wall.count_documents({"og": True})
+    if existing:
+        return
+    names = [
+        "Raayan Zaid", "Reuben Rampersad", "Johnnie Wardle", "Sam Moss",
+        "Tyler Davey", "Ayden Lai", "Aron Halldorsson", "Mark Lazar",
+        "Lewis Fiddaman", "J1_Splashy", "Toby Gibson", "Sam Lee",
+        "Adam De Silva", "Matthew Jones", "Max Drew", "Lucy Sawyer",
+        "Bob Roads", "Daniel Folorunso", "Callum Adam", "Thomas Breault",
+        "Samuel Searly", "Jonah Feitz", "Riley Colquhoun", "Edwin Paul",
+        "Zac Stein", "Tobi Mathias", "The Biologist?", "Lewis Byrnes",
+        "Matthew Talbot", "Alberto Garea", "Dylan Watson-Jones",
+        "Louis Honeybourne",
+    ]
+    base = datetime(2020, 1, 1, tzinfo=timezone.utc)
+    docs = []
+    for i, n in enumerate(names):
+        docs.append({
+            "id": str(uuid.uuid4()),
+            "name": n,
+            "note": "certified cool \u2605",
+            "og": True,
+            "timestamp": (base.replace(second=0) + __import__("datetime").timedelta(minutes=i)).isoformat(),
+        })
+    if docs:
+        await db.wall.insert_many(docs)
+    logger.info(f"Seeded {len(docs)} wall of fame names")
 
 
 @app.on_event("shutdown")
