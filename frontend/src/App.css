@@ -60,7 +60,6 @@
   font-family: 'VT323', monospace; font-size: 26px;
   color: var(--eb-lime); letter-spacing: 1px; white-space: nowrap;
 }
-.eb-nav-face { width: 30px; height: 30px; border: 2px solid var(--eb-lime); object-fit: cover; }
 .eb-nav-links { display: flex; gap: 4px; flex: 1; flex-wrap: wrap; }
 .eb-nav-link {
   background: none; border: 2px solid transparent; color: var(--eb-white);
@@ -68,6 +67,7 @@
   padding: 6px 10px; cursor: pointer; transition: color 0.1s, border-color 0.1s, background-color 0.1s;
 }
 .eb-nav-link:hover { color: var(--eb-black); background: var(--eb-cyan); border-color: var(--eb-black); }
+.eb-nav-link.active { color: var(--eb-black); background: var(--eb-lime); border-color: var(--eb-black); box-shadow: 3px 3px 0 var(--eb-magenta); }
 .eb-sound {
   background: var(--eb-black); color: var(--eb-white);
   border: 2px solid var(--eb-white); padding: 6px 10px; cursor: pointer;
@@ -95,11 +95,7 @@
 .eb-h1-accent { color: var(--eb-lime); }
 .eb-sub { font-size: 17px; max-width: 520px; line-height: 1.6; color: #cfcfc8; }
 .eb-hint { margin-top: 24px; border: 2px dashed var(--eb-cyan); padding: 12px 16px; display: inline-block; font-size: 14px; color: var(--eb-cyan); }
-.eb-hero-sprite {
-  width: 300px; max-width: 34vw; height: auto;
-  border: 3px solid var(--eb-white); box-shadow: 8px 8px 0 var(--eb-magenta);
-  animation: eb-float 3s ease-in-out infinite;
-}
+.eb-hero-cta { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
 @keyframes eb-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
 
 /* generic section */
@@ -116,49 +112,76 @@
 .eb-panel p { margin: 0 0 14px; }
 .eb-list { list-style: none; padding: 0; margin: 18px 0 0; }
 .eb-list li { display: flex; align-items: center; gap: 8px; padding: 6px 0; color: var(--eb-cyan); }
-.eb-about-img { width: 100%; border: 3px solid var(--eb-white); box-shadow: 6px 6px 0 var(--eb-cyan); }
 
-/* garage road + driving cars */
-.eb-garage { background: #0d0d0f; }
-.eb-road {
-  position: relative; height: 130px; margin-bottom: 34px; overflow: hidden;
-  background: #17171a; border: 3px solid var(--eb-white);
+/* games */
+.eb-game { display: grid; grid-template-columns: 452px minmax(240px, 340px); gap: 30px; align-items: start; justify-content: start; }
+.eb-game-main { min-width: 0; }
+@media (max-width: 860px) {
+  .eb-game { grid-template-columns: 1fr; }
 }
-.eb-road-line { position: absolute; top: 50%; left: 0; right: 0; height: 4px;
-  background: repeating-linear-gradient(90deg, var(--eb-lime) 0 30px, transparent 30px 60px); }
-.eb-drive { position: absolute; height: 74px; width: auto; bottom: 16px; left: -260px; }
-.eb-drive-1 { animation: eb-drive 9s linear infinite; }
-.eb-drive-2 { animation: eb-drive 11s linear infinite; animation-delay: 3s; }
-.eb-drive-3 { animation: eb-drive 7s linear infinite; animation-delay: 5.5s; }
-@keyframes eb-drive { from { transform: translateX(0); } to { transform: translateX(calc(100vw + 300px)); } }
-
-.eb-car-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 34px; }
-.eb-car-card { border: 3px solid var(--eb-white); background: #101012; padding: 12px; transition: transform 0.12s, box-shadow 0.12s; }
-.eb-car-card:hover { transform: translate(-3px,-3px); box-shadow: 6px 6px 0 var(--eb-magenta); }
-.eb-car-card img { width: 100%; border: 2px solid var(--eb-black); }
-.eb-car-name { margin-top: 10px; font-weight: 700; font-size: 14px; color: var(--eb-lime); }
-.eb-car-tag { font-size: 12px; color: var(--eb-cyan); }
-
-/* galleries */
-.eb-gallery { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-.eb-shot { margin: 0; border: 3px solid var(--eb-white); overflow: hidden; background: #000; }
-.eb-shot img { width: 100%; height: 200px; object-fit: cover; display: block; transition: transform 6s ease; filter: saturate(1.1) contrast(1.05); }
-.eb-shot:hover img { transform: scale(1.12); }
-.eb-shot figcaption { padding: 6px 10px; font-size: 12px; color: var(--eb-magenta); border-top: 3px solid var(--eb-white); background: var(--eb-black); }
-
-/* retro crt */
-.eb-crt-wrap { display: flex; justify-content: center; margin-bottom: 34px; }
-.eb-crt-screen {
-  width: 100%; max-width: 640px; background: #04140a; border: 6px solid #2a2a2a;
-  border-radius: 10px; padding: 22px; box-shadow: inset 0 0 60px rgba(0,255,0,0.15), 8px 8px 0 var(--eb-black);
-  position: relative; overflow: hidden;
+.eb-hud { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.eb-hud-item {
+  border: 3px solid var(--eb-white); background: #101012; padding: 8px 14px;
+  font-size: 12px; font-weight: 700; letter-spacing: 1px; color: #cfcfc8;
 }
-.eb-crt-screen::after { content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: repeating-linear-gradient(rgba(0,0,0,0) 0 2px, rgba(0,0,0,0.25) 2px 4px); }
-.eb-crt-screen pre { margin: 0; color: #45ff8f; font-family: 'Space Mono', monospace; font-size: 14px; line-height: 1.7; text-shadow: 0 0 6px #45ff8f; }
+.eb-hud-item b { color: var(--eb-lime); font-size: 16px; margin-left: 8px; }
+.eb-hud-item.hot { border-color: var(--eb-magenta); }
+.eb-hud-item.hot b { color: var(--eb-magenta); }
+
+.eb-canvas-wrap { position: relative; display: inline-block; max-width: 100%; touch-action: none; }
+.eb-canvas {
+  display: block; max-width: 100%; height: auto; image-rendering: pixelated;
+  border: 4px solid var(--eb-white); box-shadow: 8px 8px 0 var(--eb-magenta); background: #0d0d0f;
+}
+.eb-canvas-overlay {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 14px; text-align: center;
+  background: rgba(10,10,11,0.88); padding: 20px;
+}
+.eb-ov-title { font-family: 'VT323', monospace; font-size: 46px; color: var(--eb-lime); line-height: 1; }
+.eb-canvas-overlay p { margin: 0; font-size: 13px; color: #cfcfc8; max-width: 320px; line-height: 1.6; }
+.eb-ov-form { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.eb-ok { color: var(--eb-lime); font-size: 13px; }
+
+.eb-controls { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.eb-toggle {
+  background: var(--eb-black); color: var(--eb-white); border: 3px solid var(--eb-white);
+  padding: 9px 14px; cursor: pointer; font-family: 'Space Mono', monospace;
+  font-size: 12px; font-weight: 700; transition: background-color 0.12s, color 0.12s, border-color 0.12s;
+}
+.eb-toggle.on { background: var(--eb-cyan); color: var(--eb-black); border-color: var(--eb-cyan); }
+
+.eb-dpad { margin-top: 16px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.eb-dpad > div { display: flex; gap: 6px; }
+.eb-dpad button {
+  width: 48px; height: 44px; background: #101012; color: var(--eb-lime);
+  border: 3px solid var(--eb-white); cursor: pointer; font-size: 15px;
+  transition: background-color 0.1s, color 0.1s;
+}
+.eb-dpad button:active { background: var(--eb-lime); color: var(--eb-black); }
+
+.eb-leaderboard { border: 3px solid var(--eb-white); background: #101012; padding: 18px; }
+.eb-leaderboard h3 {
+  display: flex; align-items: center; gap: 8px; margin: 0 0 14px;
+  font-family: 'VT323', monospace; font-size: 28px; color: var(--eb-magenta);
+}
+.eb-leaderboard ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.eb-leaderboard li { display: flex; align-items: center; gap: 10px; font-size: 13px; border-bottom: 1px dashed #2a2a2e; padding-bottom: 5px; }
+.eb-lb-rank { color: #666; }
+.eb-lb-handle { flex: 1; color: var(--eb-white); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eb-lb-score { color: var(--eb-lime); font-weight: 700; }
+
+.eb-soon { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap: 14px; margin-top: 40px; }
+.eb-soon-card {
+  border: 3px dashed #3a3a40; padding: 18px; display: flex; flex-direction: column; gap: 4px;
+  color: #6f6f78; font-weight: 700; font-size: 13px; background: #0d0d0f;
+}
+.eb-soon-card small { color: #4a4a52; font-weight: 400; font-size: 11px; }
 
 /* links */
 .eb-links-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.eb-links-stack { grid-template-columns: 1fr; }
+.eb-links-stack .eb-linkcard { font-family: 'Space Mono', monospace; font-size: 14px; cursor: pointer; text-align: left; }
 .eb-linkcard {
   display: flex; align-items: center; gap: 10px; text-decoration: none;
   border: 3px solid var(--eb-white); background: #101012; color: var(--eb-white);

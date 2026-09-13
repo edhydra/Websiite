@@ -25,7 +25,7 @@ export default function Footer() {
           {digits.map((d, i) => <span key={i} className="eb-digit">{d}</span>)}
         </span>
       </div>
-      <div className="eb-footer-mid">made with ★ &amp; land rover fumes</div>
+      <div className="eb-footer-mid">made with ★ &amp; 3am energy</div>
       <div className="eb-footer-right">© {new Date().getFullYear()} edwardlongiscool.com</div>
     </footer>
   );

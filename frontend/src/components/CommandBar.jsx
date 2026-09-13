@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { SPRITES } from "@/data/assets";
+import { api } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
+import Confetti from "@/components/Confetti";
+
+const CODES = new Set(["metchog", "edward", "admin11", "piastri"]);
 
 const KONAMI = ["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight","b","a"];
 
@@ -7,6 +11,7 @@ const HELP = [
   "help — show this list",
   "matrix — enter the matrix",
   "party — party mode!!!",
+  "yay! — confetti",
   "secret — reveal a secret",
   "sudo hire edward — do it",
   "credits — who made this",
@@ -40,32 +45,53 @@ function MatrixRain() {
 }
 
 export default function CommandBar({ sfx }) {
+  const { user, setUser } = useAuth();
   const [open, setOpen] = useState(false);
   const [val, setVal] = useState("");
   const [out, setOut] = useState([]);
   const [matrix, setMatrix] = useState(false);
   const [egg, setEgg] = useState(false);
+  const [confetti, setConfetti] = useState(false);
   const inputRef = useRef(null);
   const konami = useRef([]);
 
   const push = (lines) => setOut((o) => [...o, ...(Array.isArray(lines) ? lines : [lines])]);
+
+  const redeem = useCallback(async (code) => {
+    if (!user) { push("you need an account for that — hit LOG IN, top right."); return; }
+    try {
+      const d = await api("/codes/redeem", { method: "POST", body: { code } });
+      setUser(d.user);
+      push(d.message);
+      sfx.good();
+    } catch (e) { push(e.message); }
+  }, [user, setUser, sfx]);
 
   const run = useCallback((raw) => {
     const cmd = raw.trim().toLowerCase();
     if (!cmd) return;
     push(`> ${cmd}`);
     sfx.click();
+
+    if (CODES.has(cmd)) { redeem(cmd); return; }
+    if (cmd === "yay!" || cmd === "yay") {
+      setConfetti(true);
+      push("✦ CONFETTI DEPLOYED ✦");
+      sfx.good();
+      return;
+    }
+
     switch (cmd) {
       case "help": push(HELP); break;
       case "matrix": setMatrix(true); push("entering the matrix... (click to exit)"); break;
       case "party": document.body.classList.toggle("eb-party"); push("PARTY MODE toggled 🎉"); break;
-      case "secret": push("✦ secret: the grey discovery is edward's favourite. don't tell the red one."); break;
-      case "sudo hire edward": push(["ACCESS GRANTED.","edward has been HIRED.","salary: 3 land rovers / yr 🚙🚙🚙"]); sfx.good(); break;
+      case "secret": push("✦ secret: snake gets faster the longer you survive. eat fast for combo x5."); break;
+      case "sudo hire edward": push(["ACCESS GRANTED.","edward has been HIRED.","salary: unlimited snake high scores"]); sfx.good(); break;
       case "credits": push(["edwardlongiscool.com","built by edward (tall, cool, epic)","powered by edward-bot + chiptunes"]); break;
       case "clear": setOut([]); break;
       default: push(`command not found: ${cmd} (try 'help')`);
     }
-  }, [sfx]);
+  }, [sfx, redeem]);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -93,6 +119,7 @@ export default function CommandBar({ sfx }) {
   return (
     <>
       {matrix && <div onClick={() => setMatrix(false)}><MatrixRain /></div>}
+      {confetti && <Confetti onDone={() => setConfetti(false)} />}
 
       {open && (
         <div className="eb-cmd" data-testid="command-bar">
@@ -117,7 +144,6 @@ export default function CommandBar({ sfx }) {
 
       {egg && (
         <div className="eb-egg" data-testid="konami-egg" onClick={() => setEgg(false)}>
-          <img src={SPRITES.edward} alt="" className="eb-egg-sprite pixelated" />
           <h2 className="eb-egg-title">↑↑↓↓←→←→ B A</h2>
           <p>you unlocked EPIC MODE. edward approves. (click to close)</p>
         </div>

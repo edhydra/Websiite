@@ -1,0 +1,29 @@
+{
+  "summary": "Iteration 3 full backend+frontend coverage for the new auth/coins/shop/roulette/decks stack and the 8 games + 5 useful tools. Backend pytest: 30/30 PASS across /api/auth/*, /api/coins/daily, /api/shop*, /api/roulette/spin, /api/decks CRUD + isolation, /api/scores coin awarding + anon path. Frontend Playwright: register new user, account chip + coins visible, claim daily (+200) and 2nd-claim rejected, reload persistence, logout, wrong-password shows auth-err, re-login works, seed account edwardtest/snake1234 logs in. All tab-* + tabpanel-* switches work. All 9 game picker slots render matching game-* stage. Flappy start->flap->crash overlay ok, Pong HUD updates, Whack scored 10 on active mole, Minesweeper click+right-flag+reset ok, Clicker counts clicks, Paint drag+clear ok. Roulette (logged in) placed a 50-coin red bet: balance went 624->574 (-50 loss consistent with server delta), roulette-history populated, bet <10 correctly rejected with roulette-err. Roulette-locked shown when logged out. Shop: bought bird_magenta (150) then equipped, bird_gold buy attempt on 500 coins triggered shop-err. Useful stuff: word counter counts 11 words/62 chars/3 sentences for the sample paragraph; scientific calc 3*(4+2)^2=108 and sqrt(144)=12; quadratic x^2-3x+2 => x=2 or 1; periodic table pt-Fe click => 'Iron' in pt-selected; 12 revision link cards with target=_blank; flashcards fc-locked out when logged out, fc-new-deck -> fc-title -> fc-front-0/back-0 -> fc-save persists 'TEST_deck_ui'. GitHub is fully gone (no link-gh testid, no 'github' text anywhere). Footer 'land rover fumes' is fixed to '3am energy'. Command bar opens on '/'.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_accounts.py",
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_iter3.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py still uses deprecated @app.on_event startup/shutdown hooks (should migrate to lifespan). Carried over from iteration 2.",
+    "server.py create_score() still lacks a whitelist for `game` — anyone can POST scores under any string. Low-risk but clutters db.scores.",
+    "auth.py sets cookie with samesite='none' and secure=True; fine for HTTPS preview but locally over http the cookie will be dropped. Not a functional issue in the preview env.",
+    "accounts.py roulette uses random.randint (not secrets); fine for cosmetic play-money, worth noting.",
+    "AuthModal.jsx: on successful register/login it calls onDone() which auto-closes the modal. Tests need to re-open via account-chip to reach claim-daily/logout — non-obvious but works. Consider optionally keeping the account panel open for one beat after register so users see their fresh 500 coins.",
+    "Games.jsx / Useful.jsx picker state does not survive tab switch (state resets on remount when Home swaps sections). Minor UX polish, not functional."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_accounts.py (new)"
+  ],
+  "success_rate": {"backend": "100% (30/30)", "frontend": "100% for the tested flows"},
+  "test_credentials": "edwardtest / snake1234 (works). Extra accounts created via /api/auth/register during tests; all prefixed TESTu_/uit* for easy cleanup.",
+  "seed_data_creation": "Backend pytest created ~10 disposable users (prefix TESTu_) plus a couple of test decks/scores. UI run created 1 user (prefix uit) and a flashcard deck 'TEST_deck_ui' on the edwardtest account. Also purchased+equipped bird_magenta on edwardtest and spent 50 coins in roulette (balance dropped 624->574 during test).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All iteration-3 features verified end-to-end. Key testids: login-btn, account-chip, account-coins, claim-daily, daily-msg, logout-btn, auth-mode-login/register, auth-username, auth-password, auth-submit, auth-err, auth-close, auth-modal. Tabs: tab-{home,games,useful,wall,guestbook} + tabpanel-<id>. Games picker: pick-{snake,flappy,pong,whack,minesweeper,clicker,paint,roulette,shop} -> game-* stage. Useful picker: tool-{words,cards,calc,table,links}. Calc result testid is calc-output (not calc-result). Roulette outer wrapper is roulette-locked when logged out, game-roulette when logged in; roulette-coins holds live balance. Shop items use buy-<id> / equip-<id> testids and shop-err on failure. Seed test account edwardtest has already claimed daily on prior test days so /api/coins/daily may 400 with 'Already claimed today' when re-run same day — expected. Roulette outcome is server-random; assert delta against returned result, not a specific win/loss.",
+  "rca of the issue": "N/A — no blocking issues found this iteration."
+}

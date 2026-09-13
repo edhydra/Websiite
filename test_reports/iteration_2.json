@@ -1,0 +1,30 @@
+{
+  "summary": "Tabs refactor + Snake game E2E tested. Backend pytest: 13/13 PASS including new /api/scores POST+GET, sort desc, profanity censoring in handle, per-game isolation. Frontend Playwright: tab navigation (HOME/GAMES/WALL/GUESTBOOK) works with hash sync and active-class highlight; direct /#games load renders games tab; forbidden testids (section-garage/retro/photos) absent; Snake game START/PAUSE/RESUME/RESET work, ArrowKeys + WASD + D-pad steer, reverse-into-self ignored, wraparound OFF wall collision triggers GAME OVER overlay, leaderboard renders sorted entries and persists across reload (verified 3 entries from backend test seeds); Wall of Fame shows >=32 seeded items and accepts new entries; Guestbook adds work; command bar opens on '/' and 'help' lists commands; Konami code shows konami-egg text-only (no img inside); Edward-bot FAB present; visitor counter renders digits.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Footer", "issue": "Footer contains the phrase 'made with \u2605 & land rover fumes' — spec says NO car mentions anywhere in site UI (chat replies exempt). 'LAND ROVER' is present in DOM on every tab because Footer renders globally.", "selector": "[data-testid=\"footer\"] .eb-footer-mid", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/backend_test.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Remove 'land rover fumes' string from /app/frontend/src/components/Footer.jsx line 28 (replace with car-free tagline) to comply with 'no car mentions in site UI' rule."
+  ],
+  "critical_code_review_comments": [
+    "App.js Home component does NOT listen for hashchange events. If a user manually edits the hash after mount or uses browser back/forward, the tab state doesn't sync. Consider a useEffect that binds window.onhashchange to setTab.",
+    "Snake.jsx keyboard handler auto-starts the game on any WASD/Arrow key while phase is 'idle' or 'over' — this can accidentally start a new run right after game over before the user submits their score (they'd move focus away from the handle input and mash arrows). Consider requiring an explicit start after 'over' or scoping the auto-start to 'idle' only.",
+    "Snake.jsx submitScore posts before local-best is confirmed persisted; safe but score cap on backend is 10M — client cap is not enforced so trust boundary is fine.",
+    "server.py: create_score endpoint doesn't validate game name against a whitelist; anyone can create scores under arbitrary `game` values, cluttering the collection.",
+    "server.py still uses deprecated @app.on_event startup/shutdown hooks (flagged prev iteration, unchanged)."
+  ],
+  "updated_files": ["/app/backend/tests/backend_test.py"],
+  "success_rate": {"backend": "100%", "frontend": "95%"},
+  "test_credentials": "N/A",
+  "seed_data_creation": "Backend tests created snake scores under handles TEST_ec369(250), TEST_c69c4(50), ****lord(10). UI test also added a couple TEST_UI_XXX wall+guestbook entries.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All tab data-testids: tab-{home,games,wall,guestbook}, tabpanel-{id}. Snake key testids: snake-start, snake-pause, snake-resume, snake-reset, snake-restart (game over), snake-score, snake-best, snake-combo, snake-wrap-toggle, snake-canvas, snake-overlay, snake-handle, snake-submit-score, snake-saved, snake-err, snake-leaderboard, lb-row, dpad-{up,down,left,right}. Snake initial direction is +x (right), initial dir cannot be reversed. To force GAME OVER: toggle wrap OFF then just wait (snake will hit right wall in ~10 ticks). Getting score>0 in headless is flaky since food position is random; recommend backend seeding + UI persistence check rather than gameplay-driven scoring. Only functional violation found is the 'land rover fumes' string in Footer.",
+  "rca of the issue": "Footer.jsx (line 28) hardcodes 'made with \u2605 & land rover fumes'. This string is rendered on every tab (Footer sits outside <main>), so LAND ROVER appears in DOM regardless of active tab. Spec explicitly forbids car mentions anywhere in site UI (Edward-bot chat replies are the only exemption). Mitigation: replace 'land rover fumes' with a car-free tagline like 'made with \u2605 & 3am energy'."
+}

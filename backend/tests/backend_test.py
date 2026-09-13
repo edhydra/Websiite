@@ -110,3 +110,36 @@ class TestAI:
     def test_chat_empty_message(self, s):
         r = s.post(f"{API}/ai/chat", json={"session_id": "x", "message": "  "})
         assert r.status_code == 400
+
+
+
+# ---- Scores / Leaderboard ----
+class TestScores:
+    def test_create_and_list_sorted(self, s):
+        handle_a = f"TEST_{uuid.uuid4().hex[:5]}"
+        handle_b = f"TEST_{uuid.uuid4().hex[:5]}"
+        r1 = s.post(f"{API}/scores", json={"game": "snake", "handle": handle_a, "score": 50})
+        assert r1.status_code == 200, r1.text
+        d1 = r1.json()
+        assert d1["handle"] == handle_a and d1["score"] == 50 and "timestamp" in d1
+
+        r2 = s.post(f"{API}/scores", json={"game": "snake", "handle": handle_b, "score": 250})
+        assert r2.status_code == 200
+
+        lb = s.get(f"{API}/scores/snake")
+        assert lb.status_code == 200
+        rows = lb.json()
+        assert isinstance(rows, list) and len(rows) <= 10
+        # descending
+        scores = [r["score"] for r in rows]
+        assert scores == sorted(scores, reverse=True)
+
+    def test_profanity_censored_in_handle(self, s):
+        r = s.post(f"{API}/scores", json={"game": "snake", "handle": "shitlord", "score": 10})
+        assert r.status_code == 200
+        assert "shit" not in r.json()["handle"].lower()
+
+    def test_other_game_isolated(self, s):
+        r = s.get(f"{API}/scores/nonexistent_game_xyz")
+        assert r.status_code == 200
+        assert r.json() == []

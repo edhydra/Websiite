@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, Request, HTTPException
+from fastapi import FastAPI, APIRouter, Request, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -19,10 +19,10 @@ from emergentintegrations.llm.chat import LlmChat, UserMessage, TextDelta, Strea
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+from database import db, client  # noqa: E402
+import auth as auth_module  # noqa: E402
+import accounts as accounts_module  # noqa: E402
+from auth import get_optional_user, public_user  # noqa: E402
 
 EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY')
 
@@ -377,20 +377,36 @@ class ScoreEntry(BaseModel):
     timestamp: str
 
 
-@api_router.post("/scores", response_model=ScoreEntry)
-async def create_score(input: ScoreCreate, request: Request):
+@api_router.post("/scores")
+async def create_score(input: ScoreCreate, request: Request, user: Optional[dict] = Depends(get_optional_user)):
     if not _check_post_limit(_client_ip(request)):
         raise HTTPException(status_code=429, detail="Slow down! Try again shortly.")
-    handle = _clean(input.handle.strip())[:20] or "anon"
+    handle = _clean((user["username"] if user else input.handle).strip())[:20] or "anon"
     score = max(0, min(int(input.score), 10_000_000))
+    game = input.game.strip().lower()[:30]
     doc = {
-        "game": input.game.strip().lower()[:30],
+        "game": game,
         "handle": handle,
+        "user_id": str(user["_id"]) if user else None,
         "score": score,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
     await db.scores.insert_one(dict(doc))
-    return ScoreEntry(handle=handle, score=score, timestamp=doc["timestamp"])
+
+    coins_awarded = 0
+    account = None
+    if user:
+        coins_awarded = min(score // 5, 300)
+        if coins_awarded:
+            await db.users.update_one({"_id": user["_id"]}, {"$inc": {"coins": coins_awarded}})
+        fresh = await db.users.find_one({"_id": user["_id"]})
+        account = public_user(fresh) if fresh else None
+
+    return {
+        "entry": {"handle": handle, "score": score, "timestamp": doc["timestamp"]},
+        "coins_awarded": coins_awarded,
+        "user": account,
+    }
 
 
 @api_router.get("/scores/{game}", response_model=List[ScoreEntry])
@@ -403,6 +419,8 @@ async def get_scores(game: str):
 
 # ---------------------------------------------------------------------------
 app.include_router(api_router)
+app.include_router(auth_module.router)
+app.include_router(accounts_module.router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -421,6 +439,7 @@ logging.basicConfig(
 @app.on_event("startup")
 async def seed_wall_of_fame():
     """Seed the original edwardlongiscool.com Wall of Fame names once."""
+    await auth_module.ensure_indexes()
     existing = await db.wall.count_documents({"og": True})
     if existing:
         return

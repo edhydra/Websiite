@@ -1,0 +1,26 @@
+{
+  "summary": "Iteration 4 focused on the new cosmetics/theme layer added on top of iteration 3. Backend: GET /api/shop now returns 44 items across 6 slots (site, bg, bird, snake, paddle, table) with pattern metadata; themetest login returns the expected inventory + equipped map; buy+equip flow works end-to-end. Frontend: shop tab renders the 6 group headings in the correct order (WHOLE-SITE THEMES, SITE BACKGROUNDS, FLAPPY BIRD SKINS, SNAKE SKINS, PONG PADDLES, ROULETTE TABLES) with 44 non-blank swatches (patterns visible for stripes/checker/dots/chrome/rainbow/starfield/scanlines). Themes: initial themetest state is body.dataset.theme=site_vapor and dataset.bg=bg_stars with matching CSS vars. Buying+equipping site_matrix flips --eb-lime from #ff71ce to #00ff41 and dataset.theme to site_matrix. Equipping bg_checker updates dataset.bg to bg_checker AND the .eb-grid-bg computed background-image switches to the checker linear-gradient. After a full page reload the equipped theme+bg persist (driven by the server, not localStorage), and logging out returns to site_default / bg_grid. Games with the themetest cosmetics equipped (snake_rainbow / bird_stripe / paddle_checker / table_carbon) all open + start without any console/page errors: Snake game-snake starts + arrow input, Flappy game-flappy starts + flap, Pong game-pong starts + HUD, Roulette game-roulette wrapper has the carbon checker background-image applied. Fresh account (500 coins) can buy bg_plain for 100 (coins -> 400), the card immediately switches to EQUIP and equipping updates body.dataset.bg to bg_plain; attempting to buy site_gold (1600) with 400 coins correctly renders shop-err='Not enough coins.'. Useful Stuff -> Revision Sites: 'Computing Covered' card is present with href=https://computingcovered.com/ and the string 'isaac' / any isaaccomputerscience URL is completely absent from the DOM. All iteration-3 regressions still green.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_accounts.py",
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_iter3.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "ThemeSync only re-applies theme when user.equipped.site/bg change (useEffect deps). If user object identity changes on unrelated fields (coins) it's fine but if user is set to null on logout the DEFAULTs are re-applied — verified working.",
+    "Shop.jsx does not resort items within each slot; ordering therefore comes from SHOP_ITEMS array order — acceptable but worth noting free items are always first, which is nice.",
+    "swatchCss/paintRect use item.value/item.alt without validation; a missing colour would silently fallback to #b6ff00. Not exploitable, just brittle if new items forget alt for stripes/checker/dots/chrome/stars.",
+    "No server-side validation that only the specific slot ids are used in the 'site'/'bg' slot for equip — you could equip a 'bird' id onto slot 'bird' via /shop/equip fine, and the code sets `equipped.<slot>` from the item's own slot, so cross-slot abuse is prevented (good).",
+    "Existing carry-overs from iter 3 still apply: @app.on_event deprecation, missing whitelist on /api/scores game field, roulette using random.randint. None blocking."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (shop catalogue + buy/equip verified)", "frontend": "100% (all cosmetics/theme flows + revision link + regression smoke passed)"},
+  "test_credentials": "themetest / theme1234 (used, cosmetics restored to site_vapor+bg_stars at end of run). edwardtest / snake1234 not touched this iteration.",
+  "seed_data_creation": "Created 1 disposable user 'TESTu_eiv3np' / pw1234 with 400 coins and inventory=[bg_plain], equipped bg_plain. No delete endpoint exists so left in db — safe to remove by prefix TESTu_. themetest was temporarily bought site_matrix + bg_checker (600 + 450 coins spent, coins went 2000 -> 950 net) then re-equipped its original site_vapor/bg_stars; site_matrix and bg_checker are now also permanently in themetest's inventory. If you need themetest 'clean' the main agent should re-seed it.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "New testids on the shop page: buy-site_matrix, equip-site_matrix, buy-bg_checker, equip-bg_checker, buy-bg_plain, buy-site_gold, etc. — every item id shown in SHOP_ITEMS gets a buy-<id> or equip-<id>. To assert a theme is applied, read document.body.dataset.theme and document.body.dataset.bg AND getComputedStyle(document.documentElement).getPropertyValue('--eb-lime'). For patterned bg, check getComputedStyle(document.querySelector('.eb-grid-bg')).backgroundImage. Themes/bg persist across reload via GET /api/auth/me (not localStorage); logged-out visitor is always body.dataset.theme='site_default'. Revision link testid is rev-computing-covered. No isaac reference remains anywhere.",
+  "rca of the issue": "N/A — no blocking issues found. The single console 'Failed to load resource: 400' captured during automation is the intentional /api/shop/buy site_gold attempt with 400 coins < 1600 price, correctly returning 400 and surfaced to the user via shop-err text 'Not enough coins.'."
+}
